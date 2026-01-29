@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time Guardian: The Quest for Knowledge</title>
+    <style>
+        :root { 
+            --primary: #6c5ce7; --gold: #fdcb6e; --bg: #f0f3f7; 
+            --success: #55efc4; --error: #ff7675; --text: #2d3436;
+        }
+        
+        body { 
+            font-family: 'Segoe UI', 'Comic Sans MS', sans-serif;
+            margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh;
+            background: var(--bg); color: var(--text); transition: background 0.5s;
+        }
+
+        /* Soft Theme Backgrounds */
+        body.unit3 { background: #fff9db; } /* Sunny Village */
+        body.unit4 { background: #e3faf3; } /* Fresh Forest */
+        body.unit5 { background: #fff4e6; } /* Ancient Scroll */
+
+        #game-container { 
+            background: white; width: 90%; max-width: 700px; 
+            padding: 30px; border-radius: 25px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1); 
+            border: 5px solid #fff; position: relative;
+        }
+
+        .screen { display: none; animation: slideUp 0.4s ease-out; }
+        .active { display: block; }
+        @keyframes slideUp { from {transform: translateY(20px); opacity:0;} to {transform: translateY(0); opacity:1;} }
+
+        h1 { color: var(--primary); text-align: center; font-size: 2em; }
+        .hero-banner { text-align: center; font-size: 4em; margin: 10px; }
+        
+        .story-box { 
+            background: #f8f9fa; border-radius: 15px; padding: 15px; 
+            border-left: 6px solid var(--primary); margin: 20px 0; font-style: italic;
+        }
+
+        .input-hero { 
+            width: 100%; padding: 15px; border-radius: 15px; border: 2px solid #ddd;
+            font-size: 1.1em; text-align: center; outline: none; transition: 0.3s;
+        }
+        .input-hero:focus { border-color: var(--primary); }
+
+        .btn { 
+            background: var(--primary); color: white; border: none; padding: 15px 25px; 
+            border-radius: 50px; cursor: pointer; font-size: 1.1em; width: 100%; 
+            margin: 10px 0; font-weight: bold; transition: 0.3s; box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
+        }
+        .btn:hover { transform: scale(1.02); background: #5b50d6; }
+        .btn:disabled { background: #ccc; box-shadow: none; cursor: not-allowed; }
+
+        .option { 
+            background: #fff; border: 2px solid #edf2f7; padding: 15px; 
+            margin: 10px 0; border-radius: 15px; cursor: pointer; transition: 0.2s;
+        }
+        .option:hover { border-color: var(--primary); background: #f3f0ff; }
+        .selected { background: #efecff !important; border-color: var(--primary) !important; font-weight: bold; }
+
+        #feedback { padding: 15px; border-radius: 15px; margin: 15px 0; display: none; line-height: 1.5; }
+        .correct { background: var(--success); color: #006b4d; }
+        .wrong { background: var(--error); color: #7d0600; }
+
+        .badge { 
+            display: inline-block; background: #ffeaa7; padding: 5px 15px; 
+            border-radius: 15px; font-size: 0.8em; margin-top: 5px; font-weight: bold;
+        }
+        .completed-tag { color: #27ae60; font-size: 0.9em; font-weight: bold; }
+
+        .progress-circle { width: 100%; height: 8px; background: #eee; border-radius: 10px; margin: 15px 0; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--primary); width: 0%; transition: 0.4s; }
+    </style>
+</head>
+<body id="body-bg">
+
+<div id="game-container">
+    <div id="login-screen" class="screen active">
+        <div class="hero-banner">🛡️</div>
+        <h1>Time Guardian</h1>
+        <div class="story-box">"The Scroll of Centuries has been scattered by the Wind of Forgetfulness! We need a hero to find the missing shards."</div>
+        <p style="text-align: center;">Enter your Hero Name to begin:</p>
+        <input type="text" id="hero-name" class="input-hero" placeholder="E.g. Brave Alex">
+        <button class="btn" onclick="startAdventure()">Start Adventure</button>
+    </div>
+
+    <div id="map-screen" class="screen">
+        <h2 id="greet-hero"></h2>
+        <p>Choose a portal to enter. Complete them all to fix the Scroll!</p>
+        
+        <div id="portal-3">
+            <button class="btn" style="background: #fab1a0;" onclick="enterPortal(3)">📍 World Culture Village</button>
+            <div id="status-3"></div>
+        </div>
+        
+        <div id="portal-4">
+            <button class="btn" style="background: #55efc4;" onclick="enterPortal(4)">🏥 Health Guardian City</button>
+            <div id="status-4"></div>
+        </div>
+        
+        <div id="portal-5">
+            <button class="btn" style="background: #ffeaa7; color: #634d00;" onclick="enterPortal(5)">📜 Ancient Civilization</button>
+            <div id="status-5"></div>
+        </div>
+    </div>
+
+    <div id="quest-screen" class="screen">
+        <div class="progress-circle"><div id="progress-bar" class="progress-fill"></div></div>
+        <div style="display:flex; justify-content:space-between; font-size: 0.9em; font-weight: bold;">
+            <span id="quest-title"></span>
+            <span id="quest-count"></span>
+        </div>
+        <h3 id="question-text" style="margin-top: 20px;"></h3>
+        <div id="options-list"></div>
+        <div id="feedback"></div>
+        <button id="action-btn" class="btn" onclick="handleAction()">Check Shard</button>
+    </div>
+
+    <div id="victory-screen" class="screen" style="text-align: center;">
+        <div id="victory-icon" style="font-size: 5em;">🏆</div>
+        <h1 id="victory-msg">Portal Repaired!</h1>
+        <div class="story-box" id="victory-story"></div>
+        <h2 id="victory-score"></h2>
+        <button class="btn" onclick="backToMap()">Return to Map</button>
+    </div>
+</div>
+
+<script>
+const heroStats = {
+    name: "",
+    completed: { 3: false, 4: false, 5: false },
+    scores: { 3: 0, 4: 0, 5: 0 }
+};
+
+const quests = {
+    3: {
+        title: "World Culture Village",
+        bg: "unit3",
+        story: "The cultures of the world are living in harmony again!",
+        data: [
+            {q: "What does sitting in a circle during a meal mean in Chinese culture?", o: ["Unity and completeness", "Hard work", "Being fast"], a: 0, e: "Sitting in a circle represents 'togetherness' and family unity."},
+            {q: "Which unique buildings in Fujian were built for safety?", o: ["Igloos", "Tulou (Earth Buildings)", "Tents"], a: 1, e: "Tulou are large, circular buildings used for community living and defense."},
+            {q: "Which instrument is played with a bow?", o: ["Pipa", "Erhu", "Dizi (Flute)"], a: 1, e: "The Erhu is a famous Chinese string instrument played with a bow."},
+            {q: "The 'Kimono' is the traditional dress of which country?", o: ["Korea", "Japan", "India"], a: 1, e: "The Kimono is a beautiful traditional garment from Japan."},
+            {q: "Buildings with large domes are usually found in which religion?", o: ["Buddhism", "Islamism", "Catholicism"], a: 1, e: "Mosques in Islam often feature large, beautiful domes."},
+            {q: "The 'Flamenco' is a traditional dance from which country?", o: ["Brazil", "Spain", "France"], a: 1, e: "Flamenco is a passionate dance style from Spain."},
+            {q: "The 24 Solar Terms are based on the changes of...", o: ["The moon", "The seasons", "The stars"], a: 1, e: "They help farmers understand the changes in weather and seasons."},
+            {q: "Which Solar Term marks the beginning of Spring?", o: ["Li Chun", "Li Qiu", "Dong Zhi"], a: 0, e: "Li Chun (Spring Commences) is the very first solar term of the year."},
+            {q: "Which famous novel features 108 brave heroes?", o: ["Water Margin", "Journey to the West", "Three Kingdoms"], a: 0, e: "Water Margin tells the story of 108 outlaws at Mount Liang."},
+            {q: "The 'Tea-picking Dance' is a folk dance of which people?", o: ["Mongols", "Han people", "Tibetans"], a: 1, e: "It is a traditional dance performed by Han people in southern China."},
+            {q: "In India, which hand is traditionally used to pick up food?", o: ["Left hand", "Right hand", "Both hands"], a: 1, e: "In Indian culture, the right hand is used for eating as a sign of respect."},
+            {q: "Horyuji Temple, the oldest wooden building, is in which country?", o: ["China", "Japan", "Thailand"], a: 1, e: "Horyuji Temple is a World Heritage site located in Nara, Japan."},
+            {q: "Traditional Chinese Ink Paintings mostly use which colors?", o: ["Neon colors", "Black and Grey shades", "Bright oil colors"], a: 1, e: "Ink paintings use black ink mixed with water to create different shades."},
+            {q: "Which novel follows the journey of a Monkey King?", o: ["Dream of Red Mansions", "Journey to the West", "Water Margin"], a: 1, e: "Sun Wukong, the Monkey King, is the hero of Journey to the West."},
+            {q: "What is the common theme of Mid-Autumn Festival and Thanksgiving?", o: ["Reunion and Gratitude", "War and History", "Sport and Games"], a: 0, e: "Both festivals are about gathering with family and giving thanks."}
+        ]
+    },
+    4: {
+        title: "Health Guardian City",
+        bg: "unit4",
+        story: "The city is safe and healthy thanks to your medical knowledge!",
+        data: [
+            {q: "If you feel very stressed, what is the best thing to do?", o: ["Hide it", "Talk to a trusted adult", "Shout at friends"], a: 1, e: "Sharing your feelings with parents or teachers helps lower stress."},
+            {q: "What is a patient's responsibility when given medicine?", o: ["Take it as instructed", "Stop when feeling better", "Share with friends"], a: 0, e: "Patients must follow the doctor's plan to fully recover."},
+            {q: "How many hours of sleep should a primary student get?", o: ["6 hours", "9 hours", "12 hours"], a: 1, e: "The Department of Health recommends at least 9 hours for growth."},
+            {q: "After 20 mins of screen time, how long should you rest your eyes?", o: ["20 seconds", "5 minutes", "20 minutes"], a: 0, e: "The 20-20-20 rule says look at something 20 feet away for 20 seconds."},
+            {q: "Which department provides dental check-ups for students?", o: ["FEHD", "Department of Health", "Fire Department"], a: 1, e: "The School Dental Care Service is part of the Department of Health."},
+            {q: "Which of these is a symptom of gum disease?", o: ["White teeth", "Bleeding gums", "Stronger teeth"], a: 1, e: "Gums that bleed easily are often a sign of infection or disease."},
+            {q: "Where should you go if someone has a life-threatening emergency?", o: ["A&E Department", "Dental Clinic", "School Office"], a: 0, e: "Accident & Emergency (A&E) is for serious or life-threatening injuries."},
+            {q: "How can we stop mosquitoes from growing?", o: ["Leave water out", "Clear stagnant water", "Plant more grass"], a: 1, e: "Mosquitoes lay eggs in standing water, so clearing it stops them."},
+            {q: "Which department is in charge of cleaning the public streets?", o: ["Housing Department", "FEHD", "Police"], a: 1, e: "The Food and Environmental Hygiene Department keeps our city clean."},
+            {q: "Which is a healthy eating habit?", o: ["Drinking soda daily", "Following the Food Pyramid", "Eating only snacks"], a: 1, e: "The Food Pyramid helps us get a balance of all necessary nutrients."},
+            {q: "Short-sightedness (Myopia) means you have trouble seeing...", o: ["Close things", "Faraway things", "Colors"], a: 1, e: "Myopia makes distant objects look blurry."},
+            {q: "What should you do if a public rubbish bin is full?", o: ["Litter on the floor", "Take trash home", "Stuff it inside"], a: 1, e: "Good citizens take their trash home if the bin is overflowing."},
+            {q: "Sharing feelings with others is good for your...", o: ["Physical health", "Mental health", "Eye health"], a: 1, e: "Talking about feelings helps keep your mind happy and healthy."},
+            {q: "Why do we get vaccinated?", o: ["To prevent diseases", "To grow taller", "To cure broken bones"], a: 0, e: "Vaccines help our immune system recognize and fight germs."},
+            {q: "Is it legal to spit in public places in Hong Kong?", o: ["Yes, it is okay", "No, it is illegal", "Only in parks"], a: 1, e: "Spitting in public is illegal because it spreads germs and diseases."}
+        ]
+    },
+    5: {
+        title: "Ancient Civilization",
+        bg: "unit5",
+        story: "The history of the Tang, Song, and Yuan dynasties is restored!",
+        data: [
+            {q: "What was the capital of the Tang Dynasty?", o: ["Luoyang", "Chang'an", "Bianjing"], a: 1, e: "Chang'an was one of the largest and most famous cities in the world."},
+            {q: "Who was respected as the 'Khan of Heaven'?", o: ["Emperor Taizong", "Kublai Khan", "Genghis Khan"], a: 0, e: "Tang Taizong was so respected that neighboring tribes gave him this title."},
+            {q: "What was India called in ancient Chinese history?", o: ["Vietnam", "Tian Zhu", "Siam"], a: 1, e: "Ancient Chinese texts referred to India as Tian Zhu."},
+            {q: "Why did Xuanzang travel to the west?", o: ["To trade silk", "To fetch Buddhist texts", "To go on holiday"], a: 1, e: "Xuanzang wanted to bring back original Buddhist scriptures to China."},
+            {q: "Which city was the capital of the Northern Song Dynasty?", o: ["Chang'an", "Bianjing", "Dadu"], a: 1, e: "Bianjing (now Kaifeng) was the bustling capital of Northern Song."},
+            {q: "What technology made Song ships safer and harder to sink?", o: ["Steel hulls", "Watertight-bulkheads", "Steam engines"], a: 1, e: "Dividing the ship into sealed rooms prevents the whole ship from sinking."},
+            {q: "Who was the founder of the Yuan Dynasty?", o: ["Temujin", "Kublai Khan", "Man Tin Cheung"], a: 1, e: "Kublai Khan, the grandson of Genghis Khan, founded the Yuan Dynasty."},
+            {q: "Man Tin Cheung is remembered for his...", o: ["Great wealth", "Loyalty and Bravery", "Poetry only"], a: 1, e: "He refused to surrender to the Yuan army even when captured."},
+            {q: "Temujin was honored with the title...", o: ["Khan of Heaven", "Genghis Khan", "Great Emperor"], a: 1, e: "Genghis Khan means 'Universal Ruler' of the Mongols."},
+            {q: "The painting 'Riverside Scene at Qingming Festival' shows which city?", o: ["Beijing", "Bianjing", "Hong Kong"], a: 1, e: "It shows the busy and prosperous life in the Song capital, Bianjing."},
+            {q: "Jianzhen, the Tang monk, traveled to Japan to spread...", o: ["Silk making", "Buddhism and Medicine", "Gunpowder"], a: 1, e: "Jianzhen brought Buddhist teachings and Chinese medicine to Japan."},
+            {q: "Tuen Mun in Hong Kong was important in Tang times for...", o: ["Fishing only", "Military and Shipping", "Farming"], a: 1, e: "It was a military garrison that protected merchant ships."},
+            {q: "The Mongols were famous for their skill in...", o: ["Building walls", "Horse riding", "Painting"], a: 1, e: "The Mongol army was the most powerful cavalry in history."},
+            {q: "The 'Sung Wong Toi' monument in HK is linked to...", o: ["Tang Dynasty", "Song Dynasty", "Yuan Dynasty"], a: 1, e: "It commemorates the last Song emperors who fled to Kowloon."},
+            {q: "Why did people in HK build 'Walled Villages' in history?", o: ["To look pretty", "To protect against bandits", "To store water"], a: 1, e: "Walls protected families from pirates, bandits, and wars."}
+        ]
+    }
+};
+
+let currentQIdx = 0;
+let currentQuest = null;
+let selectedOpt = null;
+let gameState = "asking";
+
+function startAdventure() {
+    const name = document.getElementById('hero-name').value;
+    if(!name) { alert("Please enter a name, Hero!"); return; }
+    heroStats.name = name;
+    document.getElementById('greet-hero').innerText = `Welcome, Time Guardian ${name}!`;
+    showScreen('map-screen');
+    updateMapStatus();
+}
+
+function updateMapStatus() {
+    for(let id in heroStats.completed) {
+        const statusDiv = document.getElementById(`status-${id}`);
+        if(heroStats.completed[id]) {
+            statusDiv.innerHTML = `<span class="completed-tag">✅ FIXED (Score: ${heroStats.scores[id]}/15)</span>`;
+        } else {
+            statusDiv.innerHTML = `<span class="badge">Status: BROKEN ❌</span>`;
+        }
+    }
+}
+
+function enterPortal(id) {
+    currentQuest = quests[id];
+    currentQIdx = 0;
+    heroStats.scores[id] = 0;
+    document.body.className = currentQuest.bg;
+    document.getElementById('quest-title').innerText = currentQuest.title;
+    showScreen('quest-screen');
+    loadQuestion();
+}
+
+function loadQuestion() {
+    gameState = "asking";
+    selectedOpt = null;
+    const data = currentQuest.data[currentQIdx];
+    
+    document.getElementById('question-text').innerText = data.q;
+    document.getElementById('quest-count').innerText = `Shard ${currentQIdx + 1}/15`;
+    document.getElementById('feedback').style.display = 'none';
+    document.getElementById('action-btn').innerText = "Check Shard";
+    
+    const list = document.getElementById('options-list');
+    list.innerHTML = "";
+    data.o.forEach((opt, i) => {
+        const div = document.createElement('div');
+        div.className = "option";
+        div.innerText = opt;
+        div.onclick = () => { if(gameState === "asking") selectOption(i, div); };
+        list.appendChild(div);
+    });
+
+    const progress = (currentQIdx / 15) * 100;
+    document.getElementById('progress-bar').style.width = progress + "%";
+}
+
+function selectOption(idx, el) {
+    selectedOpt = idx;
+    document.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+}
+
+function handleAction() {
+    if(gameState === "asking") {
+        if(selectedOpt === null) return;
+        checkAnswer();
+    } else {
+        currentQIdx++;
+        if(currentQIdx < 15) {
+            loadQuestion();
+        } else {
+            showVictory();
+        }
+    }
+}
+
+function checkAnswer() {
+    gameState = "result";
+    const data = currentQuest.data[currentQIdx];
+    const isCorrect = selectedOpt === data.a;
+    const fb = document.getElementById('feedback');
+    fb.style.display = "block";
+
+    if(isCorrect) {
+        heroStats.scores[getUnitId()]++;
+        fb.className = "correct";
+        fb.innerHTML = "<b>✨ Perfect!</b> You found a shard piece!";
+    } else {
+        fb.className = "wrong";
+        fb.innerHTML = `<b>💡 Learning Moment</b><br>The correct answer was: <b>${data.o[data.a]}</b><br><small>${data.e}</small>`;
+    }
+    document.getElementById('action-btn').innerText = "Continue Journey";
+}
+
+function getUnitId() {
+    if(currentQuest.title.includes("World")) return 3;
+    if(currentQuest.title.includes("Health")) return 4;
+    return 5;
+}
+
+function showVictory() {
+    const id = getUnitId();
+    heroStats.completed[id] = true;
+    showScreen('victory-screen');
+    document.getElementById('victory-story').innerText = currentQuest.story;
+    document.getElementById('victory-score').innerText = `Shards Collected: ${heroStats.scores[id]} / 15`;
+}
+
+function backToMap() {
+    document.body.className = "";
+    showScreen('map-screen');
+    updateMapStatus();
+}
+
+function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+}
+</script>
+
+</body>
+</html>
+
